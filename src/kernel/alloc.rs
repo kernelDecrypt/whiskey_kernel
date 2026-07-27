@@ -22,6 +22,10 @@ pub fn debug_info() {
     println!("Remaining Bytes:{}",free_bytes);
 }
 
+pub fn heap_bounds() -> (usize, usize) {
+    ALLOCATOR.bounds()
+}
+
 pub fn alloc_init() {
     unsafe {
         let start = &_heap_start as *const u8 as usize;

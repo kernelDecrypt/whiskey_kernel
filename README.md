@@ -39,8 +39,8 @@ I guess you could call it GNU/whiskey. Yes, that was a funny joke.
 
 
 #### Does this project use AI?
-Yes and no. Pestilentfelony (Head developer) makes use of AI as advisory, and primarily to explain 
-RISC-V assembly code. For other purposes, Pestilentfelony frowns upon it. This is for learning.
+Yes and no. kernelDecrypt (Head developer) makes use of AI as advisory, and primarily to explain 
+RISC-V assembly code. For other purposes, kernelDecrypt frowns upon it. This is for learning.
 
 <br>
 <br>

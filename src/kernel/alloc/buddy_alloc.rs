@@ -372,6 +372,12 @@ impl BuddyAllocator {
         }
         total
     }
+
+    // Exposes heap bounds so abi can recognize if pointer isn't total bullshit
+    pub fn bounds(&self) -> (usize, usize) {
+        let state = self.inner.lock();
+        (state.heap_start, state.heap_end)
+    }
 }
 
 unsafe impl GlobalAlloc for BuddyAllocator {
