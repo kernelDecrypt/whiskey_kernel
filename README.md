@@ -21,9 +21,9 @@ I guess you could call it GNU/whiskey. Yes, that was a funny joke.
 #### Roadmap
 1 -> Finish buddy allocator (DONE)
 
-2 -> define Userspace ABI (primarily a tiny syscall interface) (IN PROGRESS)
+2 -> define Userspace ABI (primarily a tiny syscall interface) (MOSTLY DONE)
 
-3 -> memory isolation, simple page table setup
+3 -> memory isolation, simple page table setup (NEXT)
 
 4 -> replace tasks.rs with better process structure
 

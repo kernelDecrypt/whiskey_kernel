@@ -89,6 +89,10 @@ pub fn run_scheduler_once() {
     }
 }
 
+pub fn current_task_id() -> usize {
+    unsafe { CURRENT_INDEX }
+}
+
 pub fn dump_status() {
     unsafe {
         println!("Registered tasks:");
