@@ -58,7 +58,7 @@ strap_handler:
     s_software_interrupt:
         li t3, 0x2
         csrc sip, t3            # clear ssip
-        call handle_timer_interrupt   
+        call handle_s_timer_tick   
         j s_restore_and_return
 
     s_external_interrupt:

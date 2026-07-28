@@ -45,20 +45,20 @@ fn trap_desc(cause: usize) -> (&'static str, usize) {
 }
 
 pub fn enable_interrupts() {
-    // enable machine-mode interrupts, machine timer interrupt, and machine external interrupt
     unsafe {
         core::arch::asm!(
-            "li t0, 0x8", // set MIE in mstatus
-            "csrs mstatus, t0",
-            "li t0, 0x880", // set MTIE (0x80) and MEIE (0x800) in mie
-            "csrs mie, t0",
+            "li t0, 0x2",      // SIE bit is in sstatus
+            "csrs sstatus, t0",
+            "li t0, 0x222",    // SSIE(0x2)STIE(0x20) SEIE(0x200)
+            "csrs sie, t0",
         );
     }
 }
 
 #[no_mangle]
 pub extern "C" fn handle_external_interrupt() {
-    let irq = plic::claim(0);
+    let ctx = plic::s_context(0);
+    let irq = plic::claim(ctx);
 
     if irq != 0 {
         unsafe {
@@ -72,7 +72,7 @@ pub extern "C" fn handle_external_interrupt() {
             _ => {}
         }
 
-        plic::complete(0, irq);
+        plic::complete(ctx, irq);
     }
 }
 

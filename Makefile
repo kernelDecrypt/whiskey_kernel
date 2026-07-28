@@ -18,12 +18,14 @@ CORE_LIBS = $(wildcard $(RUSTLIB)/liballoc-*.rlib) \
 			$(wildcard $(RUSTLIB)/libcore-*.rlib) \
             $(wildcard $(RUSTLIB)/libcompiler_builtins-*.rlib)
 
-$(BIN): src/boot/entry.s src/boot/trap.s src/kernel/main.rs linker.ld
+$(BIN): src/boot/entry.s src/boot/trap.s src/boot/s_entry.s src/boot/strap.s src/kernel/main.rs linker.ld
 	@mkdir -p build
 	$(AS) src/boot/entry.s -o build/entry.o
 	$(AS) src/boot/trap.s -o build/trap.o
-	$(RUSTC) $(RUSTFLAGS) src/kernel/main.rs -C link-args='build/entry.o build/trap.o -T linker.ld' -o $(BIN)
-
+	$(AS) src/boot/s_entry.s -o build/s_entry.o
+	$(AS) src/boot/strap.s -o build/strap.o
+	$(RUSTC) $(RUSTFLAGS) src/kernel/main.rs -C link-args='build/entry.o build/trap.o build/s_entry.o build/strap.o -T linker.ld' -o $(BIN)
+	
 run: $(BIN)
 	qemu-system-riscv64 -machine virt -bios none -kernel build/kernel.elf -nographic
 

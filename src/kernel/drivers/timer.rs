@@ -53,3 +53,12 @@ pub fn wait_for_ticks(count: u64) {
         core::hint::spin_loop();
     }
 }
+
+
+#[no_mangle]
+pub extern "C" fn handle_s_timer_tick() {
+    TICK_COUNT.fetch_add(1, Ordering::Relaxed);
+    if TICK_COUNT.load(Ordering::Relaxed) % HEARTBEAT_INTERVAL == 0 {
+        HEARTBEAT_PENDING.store(true, Ordering::Relaxed);
+    }
+}

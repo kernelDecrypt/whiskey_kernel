@@ -1,4 +1,4 @@
-.global s_entry
+.global s_mode_entry
 s_mode_entry:
     la t0, strap_handler
     csrw stvec, t0
