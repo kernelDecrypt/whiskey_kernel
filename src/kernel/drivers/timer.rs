@@ -25,11 +25,10 @@ fn set_next_timer() {
 
 #[no_mangle]
 pub extern "C" fn handle_timer_interrupt() {
-    let tick_count = TICK_COUNT.fetch_add(1, Ordering::Relaxed).wrapping_add(1);
-    if tick_count % HEARTBEAT_INTERVAL == 0 {
-        HEARTBEAT_PENDING.store(true, Ordering::Relaxed);
-    }
     set_next_timer();
+    unsafe {
+        core::arch::asm!("li t0, 0x2", "csrs mip, t0", out("t0") _);
+    }
 }
 
 pub fn ticks() -> u64 {

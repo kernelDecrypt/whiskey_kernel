@@ -11,6 +11,30 @@ _start:
     la t0, trap_handler
     csrw mtvec, t0
 
+
+    # delegate exceptions &/r interrupts to Supervisor mode
+    li t0, 0xffff
+    csrw medeleg, t0        # hands off illegal instructions, page faults, ecall fromU etc
+    li t0, 0x222
+    csrw mideleg, t0        # bits cant be delegated
+
+    # set up Supervisor mode own interrupt enable bits aot
+    li t0, 0x222
+    csrw sie, t0
+
+    # set mpp to supervisor so mret drops us there
+    li t0, 0x1800           # mask for mpp
+    csrc mstatus, t0
+    li t0, 0x800            # 01 << 11
+    csrs mstatus, t0
+
+    # tell mret where to land
+    la t0, s_mode_entry
+    csrw mepc, t0
+
+    mret # isolation boundary
+    # we dont tail rust main directly it jumps to a new symbol see s_entry.s
+
     # 4. Jump to function
     tail rust_main
 

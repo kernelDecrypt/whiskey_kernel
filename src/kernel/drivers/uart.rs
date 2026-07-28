@@ -27,19 +27,19 @@ impl Uart {
     }
 
     fn disable_interrupts() -> usize {
-        let mut mstatus: usize;
+        let mut sstatus: usize;
         unsafe {
-            asm!("csrrc {0}, mstatus, 0x8", out(reg) mstatus);
+            asm!("csrrc {0}, sstatus, 0x8", out(reg) sstatus);
         }
-        mstatus
+        sstatus
     }
 
     fn restore_interrupts(mask: usize) {
         unsafe {
             if mask & 0x8 != 0 {
-                asm!("csrs mstatus, 0x8");
+                asm!("csrs sstatus, 0x8");
             } else {
-                asm!("csrc mstatus, 0x8");
+                asm!("csrc sstatus, 0x8");
             }
         }
     }
