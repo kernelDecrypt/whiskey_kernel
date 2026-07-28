@@ -1,7 +1,7 @@
 .global strap_handler
 strap_handler:
     csrrw t6, sscratch, sp
-    la sp, trap_stack_top
+    la sp, strap_stack_top
     addi sp, sp, -256
 
     sd ra, 248(sp)

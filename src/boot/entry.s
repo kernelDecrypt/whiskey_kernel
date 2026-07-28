@@ -32,6 +32,15 @@ _start:
     la t0, s_mode_entry
     csrw mepc, t0
 
+    # Grant S-mode (and U-mode) full access to all of physical memory
+    li t0, 0x3fffffffffffff   # pmpaddr0: top of address range (TOR mode)
+    csrw pmpaddr0, t0
+    li t0, 0x0f                # pmpcfg0: R=1 W=1 X=1, A=TOR(01)
+    csrw pmpcfg0, t0
+
+    li t0, 0x80          # MTIE = bit 7
+    csrs mie, t0
+
     mret # isolation boundary
     # we dont tail rust main directly it jumps to a new symbol see s_entry.s
 
@@ -51,3 +60,10 @@ trap_stack_lower_bound:
     .space 4096 * 4  # 16KB trap stack
 .global trap_stack_top
 trap_stack_top:
+
+.section .bss.strap_stack
+.global strap_stack_lower_bound
+strap_stack_lower_bound:
+    .space 4096 * 4  # 16KB S-mode trap stack
+.global strap_stack_top
+strap_stack_top:

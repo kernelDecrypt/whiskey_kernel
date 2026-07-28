@@ -23,6 +23,8 @@ pub fn run_shell() {
             if let Some(byte) = uart.read_byte() {
                 match byte {
                     b'\r' | b'\n' => {
+                        uart.write_byte(b'\r');
+
                         uart.write_byte(b'\n');
                         if let Some(cmd) = buffer.get(..len) {
                             handle_command(cmd);
