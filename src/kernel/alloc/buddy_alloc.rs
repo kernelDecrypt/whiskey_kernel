@@ -31,26 +31,24 @@ pub struct SpinlockGuard<'a, T> {
 
 #[inline]
 fn check_interrupts_enabled() -> bool {
-    let mstatus: usize;
-
+    let sstatus: usize;
     unsafe {
-        core::arch::asm!("csrr {}, mstatus", out(reg) mstatus);
+        core::arch::asm!("csrr {}, sstatus", out(reg) sstatus);
     }
-
-    (mstatus & (1 << 3)) != 0
+    (sstatus & (1 << 1)) != 0
 }
 
 #[inline]
 fn disable_interrupts() {
     unsafe {
-        core::arch::asm!("csrc mstatus, 8");
+        core::arch::asm!("csrc sstatus, 0x2");
     }
 }
 
 #[inline]
 fn enable_interrupts() {
     unsafe {
-        core::arch::asm!("csrs mstatus, 8");
+        core::arch::asm!("csrs sstatus, 0x2");
     }
 }
 
