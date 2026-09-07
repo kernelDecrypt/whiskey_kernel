@@ -5,9 +5,6 @@
 <br>
 
 
-<img src="https://images2.imgbox.com/33/c8/8EtZjavM_o.png" alt="whiskey chan" style="vertical-align: middle; margin-right: 10px;" width="250">
-<span>I approve of this project. - An alcoholic anime girl I drew in five minutes.</span>
-
 #### Whiskey is a RISC-V Kernel built in Rust and Assembly.
 #### It features literally nothing useful so far other than a cool yellow shell.
 

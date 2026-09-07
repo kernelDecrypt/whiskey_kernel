@@ -1,3 +1,6 @@
+use core::cell::UnsafeCell;
+use core::sync::atomic::{AtomicUsize, Ordering};
+
 use crate::println;
 
 pub type TaskFn = fn();
@@ -23,10 +26,18 @@ impl Task {
     }
 }
 
-static mut TASKS: [Task; MAX_TASKS] = [Task::empty(); MAX_TASKS];
-static mut TASK_COUNT: usize = 0;
-static mut CURRENT_INDEX: usize = 0;
-static mut DEMO_TICK: usize = 0;
+struct TaskTable {
+    inner: UnsafeCell<[Task; MAX_TASKS]>,
+}
+
+unsafe impl Sync for TaskTable {}
+
+static TASKS: TaskTable = TaskTable {
+    inner: UnsafeCell::new([Task::empty(); MAX_TASKS]),
+};
+static TASK_COUNT: AtomicUsize = AtomicUsize::new(0);
+static CURRENT_INDEX: AtomicUsize = AtomicUsize::new(0);
+static DEMO_TICK: AtomicUsize = AtomicUsize::new(0);
 
 fn empty_task() {}
 
@@ -35,21 +46,20 @@ fn idle_task() {
 }
 
 fn demo_task() {
-    unsafe {
-        DEMO_TICK += 1;
-        if DEMO_TICK % 16 == 0 {
-            println!("[task demo] tick {}", DEMO_TICK);
-        }
+    let tick = DEMO_TICK.fetch_add(1, Ordering::Relaxed) + 1;
+    if tick % 16 == 0 {
+        println!("[task demo] tick {}", tick);
     }
 }
 
 pub fn init() {
-    unsafe {
-        TASK_COUNT = 0;
-        CURRENT_INDEX = 0;
-        for slot in TASKS.iter_mut() {
-            *slot = Task::empty();
-        }
+    TASK_COUNT.store(0, Ordering::Relaxed);
+    CURRENT_INDEX.store(0, Ordering::Relaxed);
+    DEMO_TICK.store(0, Ordering::Relaxed);
+
+    let tasks = unsafe { &mut *TASKS.inner.get() };
+    for slot in tasks.iter_mut() {
+        *slot = Task::empty();
     }
 
     let _ = register_task("idle", idle_task);
@@ -57,55 +67,55 @@ pub fn init() {
 }
 
 pub fn register_task(name: &'static str, run: TaskFn) -> bool {
-    unsafe {
-        if TASK_COUNT >= MAX_TASKS {
-            return false;
-        }
-
-        let slot = &mut TASKS[TASK_COUNT];
-        slot.name = name;
-        slot.run = run;
-        slot.runs = 0;
-        slot.active = true;
-        TASK_COUNT += 1;
-        true
+    let count = TASK_COUNT.load(Ordering::Relaxed);
+    if count >= MAX_TASKS {
+        return false;
     }
+
+    let tasks = unsafe { &mut *TASKS.inner.get() };
+    let slot = &mut tasks[count];
+    slot.name = name;
+    slot.run = run;
+    slot.runs = 0;
+    slot.active = true;
+    TASK_COUNT.store(count + 1, Ordering::Relaxed);
+    true
 }
 
 pub fn run_scheduler_once() {
-    unsafe {
-        if TASK_COUNT == 0 {
-            return;
-        }
+    let count = TASK_COUNT.load(Ordering::Relaxed);
+    if count == 0 {
+        return;
+    }
 
-        let index = CURRENT_INDEX % TASK_COUNT;
-        CURRENT_INDEX = (index + 1) % TASK_COUNT;
+    let index = CURRENT_INDEX.load(Ordering::Relaxed) % count;
+    CURRENT_INDEX.store((index + 1) % count, Ordering::Relaxed);
 
-        let task = &mut TASKS[index];
-        if task.active {
-            task.runs += 1;
-            (task.run)();
-        }
+    let tasks = unsafe { &mut *TASKS.inner.get() };
+    let task = &mut tasks[index];
+    if task.active {
+        task.runs += 1;
+        (task.run)();
     }
 }
 
 pub fn current_task_id() -> usize {
-    unsafe { CURRENT_INDEX }
+    CURRENT_INDEX.load(Ordering::Relaxed)
 }
 
 pub fn dump_status() {
-    unsafe {
-        println!("Registered tasks:");
-        if TASK_COUNT == 0 {
-            println!("  (none)");
-            return;
-        }
+    let count = TASK_COUNT.load(Ordering::Relaxed);
+    println!("Registered tasks:");
+    if count == 0 {
+        println!("  (none)");
+        return;
+    }
 
-        for i in 0..TASK_COUNT {
-            let task = &TASKS[i];
-            if task.active {
-                println!("  {} -> runs {}", task.name, task.runs);
-            }
+    let tasks = unsafe { &*TASKS.inner.get() };
+    for i in 0..count {
+        let task = &tasks[i];
+        if task.active {
+            println!("  {} -> runs {}", task.name, task.runs);
         }
     }
 }
