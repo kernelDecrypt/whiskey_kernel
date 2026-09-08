@@ -10,6 +10,7 @@ mod abi;
 mod alloc;
 mod drivers;
 mod panic;
+mod paging;
 mod shell;
 mod tasks;
 mod trap;
@@ -20,6 +21,7 @@ pub extern "C" fn rust_main() -> ! {
     // Keep main simple..nice and short.
 
     alloc::alloc_init();
+    paging::init();
     drivers::init_drivers();
     tasks::init();
     
