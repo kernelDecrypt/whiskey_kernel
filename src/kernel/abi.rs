@@ -1,4 +1,4 @@
-use crate::{alloc, drivers::{timer, uart}, println, tasks};
+use crate::{drivers::{timer, uart}, paging, println, tasks};
 
 pub const SYS_WRITE: usize = 1;
 pub const SYS_EXIT: usize = 2;
@@ -42,32 +42,20 @@ fn err(e: SyscallError) -> usize { e.encode()
 My own rough seam current just returns the same thing
 once we get page tables current looks up every tasks page table */
 
-trait AddressSpace {
-    fn validate(&self, ptr: usize, len: usize) -> Result<(), SyscallError>;
-}
-
-struct FlatHeapSpace;
-
-impl AddressSpace for FlatHeapSpace {
-    fn validate(&self, ptr: usize, len: usize) -> Result<(), SyscallError> {
-        if len == 0 {
-            return Ok(());
-        }
-        if ptr == 0 {
-            return Err(SyscallError::BadPointer);
-        }
-        let end = ptr.checked_add(len).ok_or(SyscallError::Overflow)?;
-        let (heap_start, heap_end) = alloc::heap_bounds();
-        if ptr < heap_start || end > heap_end {
-            return Err(SyscallError::BadPointer);
-        }
-        Ok(())
+fn validate_user_range(
+    ptr: usize,
+    len: usize,
+    required_flags: usize,
+) -> Result<(), SyscallError> {
+    if ptr == 0 && len != 0 {
+        return Err(SyscallError::BadPointer);
     }
-}
 
-// will be swapped later
-fn current_address_space() -> impl AddressSpace {
-    FlatHeapSpace
+    match paging::validate_user_range(ptr, len, required_flags) {
+        Ok(()) => Ok(()),
+        Err(paging::UserRangeError::Overflow) => Err(SyscallError::Overflow),
+        Err(_) => Err(SyscallError::BadPointer),
+    }
 }
 
 #[no_mangle]
@@ -88,7 +76,7 @@ pub extern "C" fn rust_syscall_handler(
             if fd != 1 && fd != 2 {
                 return err(SyscallError::BadFd);
             }
-            if let Err(e) = current_address_space().validate(ptr, len) {
+            if let Err(e) = validate_user_range(ptr, len, paging::PTE_READ) {
                 return err(e);
             }
 
@@ -121,7 +109,7 @@ pub extern "C" fn rust_syscall_handler(
             if len == 0 {
                 return ok(0);
             }
-            if let Err(e) = current_address_space().validate(ptr, 1) {
+            if let Err(e) = validate_user_range(ptr, len, paging::PTE_WRITE) {
                 return err(e);
             }
 

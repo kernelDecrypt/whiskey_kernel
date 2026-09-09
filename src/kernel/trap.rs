@@ -38,6 +38,9 @@ fn trap_desc(cause: usize) -> (&'static str, usize) {
             3 => "breakpoint",
             5 => "load access fault",
             7 => "store/AMO access fault",
+            12 => "instruction page fault",
+            13 => "load page fault",
+            15 => "store/AMO page fault",
             _ => "unknown exception",
         };
         (kind, code)
